@@ -53,7 +53,14 @@ jobs:
       - name: Prepare Zyno-Voice.apk
         run: cp app/build/outputs/apk/debug/app-debug.apk Zyno-Voice.apk
 
+      - name: Upload Zyno Voice APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zyno-Voice-apk
+          path: Zyno-Voice.apk
+
       - name: Publish Direct APK to GitHub Releases
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -61,12 +68,7 @@ jobs:
             gh release upload latest Zyno-Voice.apk --clobber
           else
             gh release create latest Zyno-Voice.apk \
+              --target "${{ github.sha }}" \
               --title "Zyno Voice Latest APK" \
               --notes "Direct APK download for Zyno Voice. Tap Zyno-Voice.apk below to download and install."
           fi
-
-      - name: Upload Zyno Voice APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Zyno-Voice-apk
-          path: Zyno-Voice.apk
