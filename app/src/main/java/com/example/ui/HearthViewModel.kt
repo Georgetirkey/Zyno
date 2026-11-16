@@ -4,6 +4,7 @@ import android.net.Uri
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import androidx.lifecycle.ViewModel
+import com.example.audio.EarphoneState
 import com.example.permissions.PermissionsStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +24,9 @@ data class HearthUiState(
     val hasError: Boolean = false,
     val errorDescription: String? = null,
     val canGoBack: Boolean = false,
-    val isSpeakerOn: Boolean = true,
+    val isSpeakerOn: Boolean = false,
+    val earphoneState: EarphoneState = EarphoneState(),
+    val showEarphoneSheet: Boolean = false,
     val permissionsStatus: PermissionsStatus = PermissionsStatus(),
     val showPermissionsSheet: Boolean = false,
     val permissionsBannerDismissed: Boolean = false,
@@ -66,6 +69,15 @@ class HearthViewModel : ViewModel() {
         }
     }
 
+    fun onVisitedHistoryUpdated(url: String?, canGoBack: Boolean) {
+        _uiState.update {
+            it.copy(
+                currentUrl = url ?: it.currentUrl,
+                canGoBack = canGoBack
+            )
+        }
+    }
+
     fun onNavigationStateChanged(canGoBack: Boolean) {
         _uiState.update { it.copy(canGoBack = canGoBack) }
     }
@@ -99,6 +111,18 @@ class HearthViewModel : ViewModel() {
                 errorDescription = null
             )
         }
+    }
+
+    fun updateEarphoneState(earphoneState: EarphoneState) {
+        _uiState.update { it.copy(earphoneState = earphoneState) }
+    }
+
+    fun setEarphoneSheetVisible(visible: Boolean) {
+        _uiState.update { it.copy(showEarphoneSheet = visible) }
+    }
+
+    fun setSpeakerOn(enabled: Boolean) {
+        _uiState.update { it.copy(isSpeakerOn = enabled) }
     }
 
     fun markInitialPermissionsPrompted() {

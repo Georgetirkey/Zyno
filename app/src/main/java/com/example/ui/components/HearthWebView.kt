@@ -85,6 +85,7 @@ fun HearthWebViewContainer(
     onPageStarted: (String?) -> Unit,
     onPageCommitVisible: () -> Unit,
     onPageFinished: (String?, Boolean) -> Unit,
+    onVisitedHistoryUpdated: (String?, Boolean) -> Unit,
     onNavigationStateChanged: (Boolean) -> Unit,
     onPageError: (String?) -> Unit,
     onRequestWebPermissions: (PermissionRequest, Array<String>) -> Unit,
@@ -97,8 +98,25 @@ fun HearthWebViewContainer(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var popupWebView by remember { mutableStateOf<WebView?>(null) }
 
-    BackHandler(enabled = uiState.canGoBack) {
-        webViewRef?.goBack()
+    BackHandler(enabled = popupWebView != null || uiState.canGoBack) {
+        val activePopup = popupWebView
+        if (activePopup != null) {
+            if (activePopup.canGoBack()) {
+                activePopup.goBack()
+            } else {
+                CookieManager.getInstance().flush()
+                activePopup.destroy()
+                popupWebView = null
+            }
+        } else {
+            val webView = webViewRef
+            if (webView?.canGoBack() == true) {
+                webView.goBack()
+                onNavigationStateChanged(webView.canGoBack())
+            } else {
+                onNavigationStateChanged(false)
+            }
+        }
     }
 
     LaunchedEffect(uiState.reloadNonce) {
@@ -172,7 +190,16 @@ fun HearthWebViewContainer(
 
                         override fun onPageCommitVisible(view: WebView?, url: String?) {
                             injectNativeFeelStyles(view)
+                            onNavigationStateChanged(view?.canGoBack() == true)
                             onPageCommitVisible()
+                        }
+
+                        override fun doUpdateVisitedHistory(
+                            view: WebView?,
+                            url: String?,
+                            isReload: Boolean
+                        ) {
+                            onVisitedHistoryUpdated(url, view?.canGoBack() == true)
                         }
 
                         override fun onPageFinished(view: WebView?, url: String?) {

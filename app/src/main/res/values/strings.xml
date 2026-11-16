@@ -3,6 +3,7 @@
     <string name="cd_hearth_brand">Zyno Voice logo</string>
     <string name="cd_close_popup">Close sign-in window</string>
     <string name="cd_dismiss_banner">Dismiss permission reminder</string>
+    <string name="cd_earphone_monitor">Earphones monitoring controls</string>
 
     <string name="loading_subtitle">Connect beyond voice…</string>
 
@@ -41,4 +42,20 @@
     <string name="upload_files_desc">Pick voice clips, audio, or documents</string>
     <string name="action_cancel">Cancel</string>
     <string name="popup_window_title">Sign in</string>
+
+    <string name="earphone_pill_monitoring">Monitoring ON</string>
+    <string name="earphone_pill_connected">Earphones</string>
+    <string name="earphone_pill_audio">Audio</string>
+    <string name="earphone_sheet_title">Earphones &amp; Audio Monitor</string>
+    <string name="earphone_sheet_subtitle">Automatically detects wired, USB-C, and Bluetooth earphones and lets you monitor your mic live.</string>
+    <string name="earphone_connected_default">Earphones Connected</string>
+    <string name="earphone_connected_desc">Voice chat audio is automatically routed to your earphones.</string>
+    <string name="earphone_disconnected_title">No Earphones Detected</string>
+    <string name="earphone_disconnected_desc">Plug in wired/USB earphones or connect Bluetooth headphones to monitor live audio.</string>
+    <string name="earphone_monitor_toggle_title">Live Mic Monitoring</string>
+    <string name="earphone_monitor_toggle_desc">Hear your microphone live in your earphones with low latency.</string>
+    <string name="earphone_monitor_requires_headset">Connect earphones first to avoid speaker feedback.</string>
+    <string name="earphone_monitor_volume">Monitor Volume</string>
+    <string name="speaker_routing_title">Speakerphone (No Earphones)</string>
+    <string name="speaker_routing_desc">Route voice chat to loudspeaker when earphones are unplugged.</string>
 </resources>
