@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -254,18 +255,27 @@ fun HearthWebViewContainer(
                                         request: WebResourceRequest?
                                     ): Boolean {
                                         val uri = request?.url ?: return false
-                                        val host = uri.host?.lowercase().orEmpty()
-                                        if (host == "hearth-voice-talk.lovable.app") {
-                                            webViewRef?.loadUrl(uri.toString())
-                                            popupWebView?.destroy()
-                                            popupWebView = null
-                                            return true
+                                        val scheme = uri.scheme?.lowercase().orEmpty()
+                                        if (scheme == "http" || scheme == "https") {
+                                            val host = uri.host?.lowercase().orEmpty()
+                                            return if (isInAppHost(host)) {
+                                                false
+                                            } else {
+                                                openExternalUri(ctx, uri)
+                                                true
+                                            }
                                         }
-                                        return false
+                                        openExternalUri(ctx, uri)
+                                        return true
+                                    }
+
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        CookieManager.getInstance().flush()
                                     }
                                 }
                                 webChromeClient = object : WebChromeClient() {
                                     override fun onCloseWindow(window: WebView?) {
+                                        CookieManager.getInstance().flush()
                                         popupWebView?.destroy()
                                         popupWebView = null
                                     }
@@ -318,6 +328,7 @@ fun HearthWebViewContainer(
             Surface(
                 modifier = Modifier
                     .fillMaxSize()
+                    .imePadding()
                     .padding(12.dp),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface
@@ -337,6 +348,7 @@ fun HearthWebViewContainer(
                         )
                         IconButton(
                             onClick = {
+                                CookieManager.getInstance().flush()
                                 activePopup.destroy()
                                 popupWebView = null
                             }
@@ -379,7 +391,10 @@ private fun configureNativeAppWebSettings(webView: WebView) {
         javaScriptCanOpenWindowsAutomatically = true
         setSupportMultipleWindows(true)
         mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-        userAgentString = userAgentString.replace("; wv", "")
+        // Strip WebView markers (; wv and Version/x.x) so Google OAuth recognizes a standard mobile Chrome UA
+        userAgentString = userAgentString
+            .replace("; wv", "")
+            .replace(Regex("""Version/\d+(\.\d+)*\s*"""), "")
     }
     CookieManager.getInstance().apply {
         setAcceptCookie(true)
@@ -405,11 +420,26 @@ private fun injectNativeFeelStyles(webView: WebView?) {
 private fun isInAppHost(host: String): Boolean {
     return host == "hearth-voice-talk.lovable.app" ||
         host.endsWith(".lovable.app") ||
-        host.endsWith("accounts.google.com") ||
+        host.endsWith(".lovableproject.com") ||
+        host == "accounts.google.com" ||
+        host.startsWith("accounts.google.") ||
+        host == "accounts.youtube.com" ||
+        host == "myaccount.google.com" ||
+        host == "gds.google.com" ||
+        host == "ogs.google.com" ||
+        host == "apis.google.com" ||
+        host.endsWith(".gstatic.com") ||
+        host.endsWith(".googleusercontent.com") ||
+        host.endsWith(".googleapis.com") ||
         host.endsWith(".supabase.co") ||
+        host.endsWith(".supabase.in") ||
         host.endsWith(".firebaseapp.com") ||
-        host.endsWith("appleid.apple.com") ||
-        host.endsWith("github.com")
+        host.endsWith(".web.app") ||
+        host.endsWith(".auth0.com") ||
+        host.endsWith(".clerk.accounts.dev") ||
+        host.endsWith(".clerk.com") ||
+        host == "appleid.apple.com" ||
+        host == "github.com"
 }
 
 private fun openExternalUri(context: android.content.Context, uri: Uri) {

@@ -2,7 +2,8 @@ name: Build Zyno Voice APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - '**'
   workflow_dispatch:
 
 permissions:
@@ -22,14 +23,19 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.3.1"
 
-      - name: Ensure debug keystore exists for CI build
+      - name: Restore debug keystore
         run: |
-          if [ ! -f debug.keystore ]; then
+          if [ -f debug.keystore.base64 ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
             keytool -genkeypair -v \
               -keystore debug.keystore \
               -storepass android \
@@ -41,19 +47,23 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-      - name: Build Debug APK
+      - name: Build Zyno Voice APK
         run: gradle assembleDebug
 
-      - name: Prepare direct APK filename
+      - name: Prepare Zyno-Voice.apk
         run: cp app/build/outputs/apk/debug/app-debug.apk Zyno-Voice.apk
 
       - name: Publish Direct APK to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: Zyno Voice Latest APK
-          body: Direct APK download for Zyno Voice. Tap Zyno-Voice.apk below to download and install.
-          files: Zyno-Voice.apk
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest Zyno-Voice.apk --clobber
+          else
+            gh release create latest Zyno-Voice.apk \
+              --title "Zyno Voice Latest APK" \
+              --notes "Direct APK download for Zyno Voice. Tap Zyno-Voice.apk below to download and install."
+          fi
 
       - name: Upload Zyno Voice APK Artifact
         uses: actions/upload-artifact@v4
