@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">Zyno Voice</string>
+    <string name="cd_hearth_brand">Zyno Voice logo</string>
+    <string name="cd_close_popup">Close sign-in window</string>
+    <string name="cd_dismiss_banner">Dismiss permission reminder</string>
+
+    <string name="loading_subtitle">Connect beyond voice…</string>
+
+    <string name="offline_title">Unable to reach Zyno Voice</string>
+    <string name="offline_subtitle">Check your internet connection and tap retry to reconnect.</string>
+    <string name="action_retry">Reconnect</string>
+
+    <string name="perm_banner_message">Allow mic &amp; notifications for voice rooms</string>
+    <string name="perm_banner_action">Enable</string>
+
+    <string name="permissions_sheet_title">Voice &amp; Post Permissions</string>
+    <string name="permissions_sheet_subtitle">Enable device access so voice rooms, live audio, camera snapshots, and post uploads work smoothly.</string>
+    <string name="action_grant_all">Grant All Permissions</string>
+    <string name="action_open_settings">App Settings</string>
+    <string name="status_granted">Granted</string>
+    <string name="status_needed">Needed</string>
+
+    <string name="perm_mic_title">Microphone (Voice Chat)</string>
+    <string name="perm_mic_desc">Required for live voice rooms, audio messages, and WebRTC calls.</string>
+    <string name="perm_cam_title">Camera (Video &amp; Post Photos)</string>
+    <string name="perm_cam_desc">Lets you snap photos for posts or join video-enabled rooms.</string>
+    <string name="perm_notif_title">Notifications</string>
+    <string name="perm_notif_desc">Receive alerts for replies, mentions, and live room invites.</string>
+    <string name="perm_bt_title">Bluetooth Audio</string>
+    <string name="perm_bt_desc">Route voice chat seamlessly through wireless headphones.</string>
+    <string name="perm_picker_title">Media &amp; Post Uploads</string>
+    <string name="perm_picker_desc">Uses Android Photo Picker and File Chooser safely—no broad storage permission needed.</string>
+
+    <string name="upload_sheet_title">Add Media to Post</string>
+    <string name="upload_sheet_subtitle">Choose how to attach photos, audio, or files to your Zyno Voice post.</string>
+    <string name="upload_photo_video">Photos &amp; Videos</string>
+    <string name="upload_photo_video_desc">Open the Android Photo Picker</string>
+    <string name="upload_camera">Take a Photo</string>
+    <string name="upload_camera_desc">Capture directly with your camera</string>
+    <string name="upload_files">Audio &amp; Other Files</string>
+    <string name="upload_files_desc">Pick voice clips, audio, or documents</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="popup_window_title">Sign in</string>
+</resources>

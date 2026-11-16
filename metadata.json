@@ -1,0 +1,6 @@
+{
+  "name": "Zyno Voice",
+  "description": "Zyno Voice chat and community posts Android app with full microphone, audio routing, camera, notification, and media upload support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
