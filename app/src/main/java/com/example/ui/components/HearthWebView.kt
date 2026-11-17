@@ -91,7 +91,8 @@ fun HearthWebViewContainer(
     onRequestWebPermissions: (PermissionRequest, Array<String>) -> Unit,
     onShowFileChooser: (FileChooserRequest) -> Unit,
     onRetryClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    applySafeDrawingInsets: Boolean = true
 ) {
     val context = LocalContext.current
     val surfaceBackgroundArgb = MaterialTheme.colorScheme.background.toArgb()
@@ -142,11 +143,19 @@ fun HearthWebViewContainer(
         }
     }
 
-    Box(
-        modifier = modifier
+    val containerModifier = if (applySafeDrawingInsets) {
+        modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.safeDrawing)
+    } else {
+        modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    }
+
+    Box(
+        modifier = containerModifier
     ) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),

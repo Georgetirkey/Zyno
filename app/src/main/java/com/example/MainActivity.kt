@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -32,9 +31,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Headset
-import androidx.compose.material.icons.filled.HeadsetOff
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,7 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -61,10 +56,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.audio.VoiceAudioController
 import com.example.permissions.HearthPermissions
 import com.example.ui.HearthViewModel
-import com.example.ui.components.EarphoneMonitorSheet
 import com.example.ui.components.HearthWebViewContainer
 import com.example.ui.components.PermissionsBottomSheet
 import com.example.ui.components.PostMediaChooserSheet
@@ -106,37 +99,21 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val audioController = remember { VoiceAudioController(context) }
-    val liveEarphoneState by audioController.earphoneState.collectAsStateWithLifecycle()
-
     var pendingCameraCaptureUri by remember { mutableStateOf<Uri?>(null) }
     var launchCameraAfterPermission by remember { mutableStateOf(false) }
-    var startMonitorAfterPermission by remember { mutableStateOf(false) }
 
-    LaunchedEffect(liveEarphoneState) {
-        viewModel.updateEarphoneState(liveEarphoneState)
-    }
-
-    LaunchedEffect(uiState.isSpeakerOn) {
-        audioController.setSpeakerphoneEnabled(uiState.isSpeakerOn)
-    }
-
-    // Sync permission and earphone hardware status whenever activity resumes
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.updatePermissionsStatus(HearthPermissions.checkStatus(context))
-                audioController.refreshConnectedEarphones()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            audioController.release()
         }
     }
 
-    // Camera photo capture launcher (for posts)
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -161,7 +138,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
         takePictureLauncher.launch(uri)
     }
 
-    // Runtime permissions launcher (handles initial prompt, WebRTC permission requests, camera, and earphone monitor)
     val permissionsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
@@ -195,16 +171,8 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
                 viewModel.deliverFileChooserResult(null)
             }
         }
-
-        if (startMonitorAfterPermission) {
-            startMonitorAfterPermission = false
-            if (updatedStatus.microphoneGranted) {
-                audioController.startEarphoneMonitoring()
-            }
-        }
     }
 
-    // Request all core voice/camera/notification/bluetooth permissions on first launch
     LaunchedEffect(Unit) {
         val status = HearthPermissions.checkStatus(context)
         viewModel.updatePermissionsStatus(status)
@@ -216,7 +184,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
         }
     }
 
-    // Zero-permission Photo Picker launchers for posts (single & multiple)
     val singleMediaPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -229,7 +196,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
         viewModel.deliverFileChooserResult(if (uris.isNotEmpty()) uris.toTypedArray() else null)
     }
 
-    // Storage Access Framework launchers for audio clips & documents in posts
     val singleDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -242,7 +208,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
         viewModel.deliverFileChooserResult(if (uris.isNotEmpty()) uris.toTypedArray() else null)
     }
 
-    // Full-screen native app container with zero browser chrome
     Box(modifier = Modifier.fillMaxSize()) {
         HearthWebViewContainer(
             uiState = uiState,
@@ -263,69 +228,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // Compact floating Earphones Monitoring pill (non-intrusive, positioned cleanly above bottom nav)
-        AnimatedVisibility(
-            visible = !uiState.isInitialLoading && !uiState.hasError,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(end = 12.dp, bottom = 76.dp)
-        ) {
-            val isMonitoring = uiState.earphoneState.isMonitoringActive
-            val isConnected = uiState.earphoneState.isConnected
-            Surface(
-                onClick = { viewModel.setEarphoneSheetVisible(true) },
-                shape = RoundedCornerShape(24.dp),
-                color = when {
-                    isMonitoring -> MaterialTheme.colorScheme.primary
-                    isConnected -> MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
-                    else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
-                },
-                tonalElevation = 4.dp,
-                shadowElevation = 6.dp,
-                modifier = Modifier
-                    .minimumInteractiveComponentSize()
-                    .testTag("earphone_monitor_pill")
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when {
-                            isMonitoring -> Icons.Filled.GraphicEq
-                            isConnected -> Icons.Filled.Headset
-                            else -> Icons.Filled.HeadsetOff
-                        },
-                        contentDescription = stringResource(id = R.string.cd_earphone_monitor),
-                        tint = when {
-                            isMonitoring -> MaterialTheme.colorScheme.onPrimary
-                            isConnected -> MaterialTheme.colorScheme.tertiary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = when {
-                            isMonitoring -> stringResource(id = R.string.earphone_pill_monitoring)
-                            isConnected -> stringResource(id = R.string.earphone_pill_connected)
-                            else -> stringResource(id = R.string.earphone_pill_audio)
-                        },
-                        style = MaterialTheme.typography.labelLarge,
-                        color = when {
-                            isMonitoring -> MaterialTheme.colorScheme.onPrimary
-                            isConnected -> MaterialTheme.colorScheme.tertiary
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                }
-            }
-        }
-
-        // Subtle dismissible native prompt shown ONLY if permissions were denied after prompting
         val showMissingPermsBanner = uiState.hasPromptedInitialPermissions &&
             !uiState.isInitialLoading &&
             !uiState.permissionsStatus.allGranted &&
@@ -337,7 +239,7 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
             exit = fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Surface(
@@ -391,37 +293,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
         }
     }
 
-    // Earphones Monitoring & Audio Routing sheet
-    if (uiState.showEarphoneSheet) {
-        EarphoneMonitorSheet(
-            earphoneState = uiState.earphoneState,
-            isSpeakerOn = uiState.isSpeakerOn,
-            onDismiss = { viewModel.setEarphoneSheetVisible(false) },
-            onToggleMonitoring = { enable ->
-                if (enable) {
-                    if (HearthPermissions.isMicrophoneGranted(context)) {
-                        audioController.startEarphoneMonitoring()
-                    } else {
-                        startMonitorAfterPermission = true
-                        permissionsLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
-                    }
-                } else {
-                    audioController.stopEarphoneMonitoring()
-                }
-            },
-            onMonitorGainChange = { gain ->
-                audioController.setMonitorGain(gain)
-            },
-            onSpeakerToggle = { enabled ->
-                viewModel.setSpeakerOn(enabled)
-            },
-            onOpenPermissions = {
-                viewModel.setPermissionsSheetVisible(true)
-            }
-        )
-    }
-
-    // Permissions review & Grant All sheet
     if (uiState.showPermissionsSheet) {
         PermissionsBottomSheet(
             permissionsStatus = uiState.permissionsStatus,
@@ -442,7 +313,6 @@ fun HearthVoiceApp(viewModel: HearthViewModel) {
         )
     }
 
-    // Post media/audio/camera chooser sheet
     val fileChooser = uiState.pendingFileChooser
     if (uiState.showMediaChooserSheet && fileChooser != null) {
         PostMediaChooserSheet(
